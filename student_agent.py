@@ -57,7 +57,6 @@ class Agent(object):
         self.online_net.eval()
 
         self.skip = 4
-        self.buffer = deque(maxlen=2)
         self.frames = deque(maxlen=4)
 
         self.start = False
@@ -66,7 +65,6 @@ class Agent(object):
         self.size = (84, 84)
 
     def reset(self):
-        self.buffer.clear()
         self.frames.clear()
         self.start = False
         self.step_count = 0
@@ -81,18 +79,11 @@ class Agent(object):
     def act(self, obs):
         if not self.start:
             self.reset()
-        new_obs = self.resize(obs)
-        self.buffer.append(new_obs)
-        if len(self.buffer) == 2:
-            # Convert the deque to a torch Tensor before finding the maximum
-            tensor_buffer = torch.stack(list(self.buffer))
-            max_frames = torch.max(tensor_buffer, dim=0).values
-        else:
-            max_frames = new_obs
         self.step_count += 1
         change = (not self.start) or (self.step_count % self.skip == 0)
 
         if change:
+            new_obs = self.resize(obs)
             if not self.start:
                 for _ in range(4):
                     self.frames.append(new_obs)
