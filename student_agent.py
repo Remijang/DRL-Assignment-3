@@ -50,7 +50,7 @@ class DualDQN(nn.Module):
 class Agent(object):
     def __init__(self):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        saved_model_path = 'model_9500'
+        saved_model_path = 'model'
         self.action_space = gym.spaces.Discrete(12)
         self.online_net = DualDQN(4, 12).to(self.device)
         saved_data = torch.load(saved_model_path, map_location=self.device)
