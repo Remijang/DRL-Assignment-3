@@ -7,6 +7,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchvision.transforms.functional as TF
 import cv2
+import random
 
 class DualDQN(nn.Module):
     def __init__(self, n_channel, n_action):
@@ -49,7 +50,7 @@ class DualDQN(nn.Module):
 class Agent(object):
     def __init__(self):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        saved_model_path = 'model'
+        saved_model_path = 'model_9500'
         self.action_space = gym.spaces.Discrete(12)
         self.online_net = DualDQN(4, 12).to(self.device)
         saved_data = torch.load(saved_model_path, map_location=self.device)
@@ -79,20 +80,19 @@ class Agent(object):
     def act(self, obs):
         if not self.start:
             self.reset()
-        self.step_count += 1
-        change = (not self.start) or (self.step_count % self.skip == 0)
-
+        new_obs = self.resize(obs)
+        change = not self.start or (self.step_count % 4 == 0)
         if change:
-            new_obs = self.resize(obs)
             if not self.start:
                 for _ in range(4):
-                    self.frames.append(new_obs)
+                    self.frames.append(new_obs.clone())
                 self.start = True
             else:
-                self.frames.append(new_obs)
+                self.frames.append(new_obs.clone())
         state = torch.cat(list(self.frames), dim=0)
         tensor = state.unsqueeze(0).to(self.device)
         with torch.no_grad():
             q = self.online_net(tensor)
             self.last_action = q.argmax(dim=1).item()
+        self.step_count += 1
         return self.last_action
